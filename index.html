@@ -3,242 +3,308 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>TON Cases Mini App</title>
-    <!-- Подключаем Telegram SDK -->
+    <title>TON Cases Premium</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg: #0b0c16;
-            --panel: #111427;
-            --card: #161a33;
-            --blue: #2b58ff;
-            --text-gray: #7d849b;
-            --green: #2ecc71;
-            --border: rgba(255, 255, 255, 0.05);
+            --bg: #05060e;
+            --panel: rgba(22, 26, 51, 0.6);
+            --card: rgba(30, 35, 66, 0.8);
+            --accent: #2b58ff;
+            --accent-glow: rgba(43, 88, 255, 0.4);
+            --text-main: #ffffff;
+            --text-gray: #94a3b8;
+            --green: #10b981;
+            --border: rgba(255, 255, 255, 0.08);
         }
 
-        /* Убираем лишние скроллы и выделения */
         * { 
             box-sizing: border-box; 
             -webkit-tap-highlight-color: transparent; 
             user-select: none;
-            scrollbar-width: none; 
+            transition: all 0.2s ease;
         }
-        ::-webkit-scrollbar { display: none; }
 
         body {
             margin: 0; padding: 0;
             font-family: 'Inter', sans-serif;
             background-color: var(--bg);
-            color: white;
-            display: flex; flex-direction: column;
-            height: 100vh; height: 100dvh;
+            background-image: radial-gradient(circle at top right, #1a1c3a 0%, #05060e 50%);
+            color: var(--text-main);
+            height: 100vh;
             overflow: hidden;
+            display: flex;
+            flex-direction: column;
         }
 
-        /* --- ВЕРХНЯЯ ПАНЕЛЬ --- */
+        /* --- HEADER --- */
         header {
             display: flex; justify-content: space-between; align-items: center;
-            padding: 14px 16px; background: var(--panel);
+            padding: 15px 20px;
+            background: var(--panel);
+            backdrop-filter: blur(10px);
             border-bottom: 1px solid var(--border);
             z-index: 100;
         }
-        .header-left { display: flex; align-items: center; gap: 10px; }
-        .tg-avatar { width: 38px; height: 38px; border-radius: 50%; border: 1px solid var(--border); object-fit: cover; }
-        .tg-name { font-size: 13px; font-weight: 700; display: block; }
-        .online-status { font-size: 9px; color: var(--green); font-weight: 800; display: flex; align-items: center; gap: 4px; margin-top: 2px; }
-        .online-dot { width: 5px; height: 5px; background: var(--green); border-radius: 50%; box-shadow: 0 0 5px var(--green); }
+        .header-left { display: flex; align-items: center; gap: 12px; }
+        .tg-avatar { 
+            width: 40px; height: 40px; 
+            border-radius: 12px; 
+            border: 2px solid var(--accent);
+            object-fit: cover;
+        }
+        .tg-name { font-size: 14px; font-weight: 700; }
+        .online-status { font-size: 10px; color: var(--green); display: flex; align-items: center; gap: 5px; opacity: 0.8; }
+        .online-dot { width: 6px; height: 6px; background: var(--green); border-radius: 50%; box-shadow: 0 0 8px var(--green); }
 
-        .balance-group {
-            display: flex; align-items: center;
-            background: rgba(255, 255, 255, 0.03);
+        .balance-card {
+            background: rgba(43, 88, 255, 0.15);
+            border: 1px solid var(--accent);
+            padding: 6px 12px;
+            border-radius: 12px;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .balance-card span { font-weight: 800; font-size: 15px; }
+
+        /* --- БЕСКОНЕЧНАЯ ЛЕНТА (ФИКС БАГОВ) --- */
+        .tape-wrapper {
+            background: rgba(0,0,0,0.2);
+            padding: 15px 0;
+            overflow: hidden;
+            position: relative;
+            border-bottom: 1px solid var(--border);
+        }
+        .tape-track {
+            display: flex;
+            gap: 15px;
+            width: max-content;
+            animation: scroll 30s linear infinite;
+            will-change: transform;
+        }
+        .tape-item {
+            width: 65px; height: 65px;
+            background: var(--card);
+            border-radius: 15px;
+            padding: 5px;
             border: 1px solid var(--border);
-            border-radius: 14px;
-            padding: 2px 2px 2px 12px; gap: 10px;
+            flex-shrink: 0;
         }
-        .bal-val { font-size: 14px; font-weight: 700; }
-        .bal-ton { color: var(--blue); font-size: 11px; font-weight: 800; }
-        .plus-btn {
-            width: 28px; height: 28px; background: var(--blue);
-            border: none; border-radius: 10px; color: white;
-            font-size: 18px; font-weight: 700; display: flex;
-            align-items: center; justify-content: center; cursor: pointer;
+        .tape-item img { 
+            width: 100%; height: 100%; 
+            object-fit: cover; 
+            border-radius: 10px; 
         }
 
-        /* --- ОСНОВНОЙ КОНТЕЙНЕР --- */
-        .container { flex-grow: 1; overflow-y: auto; padding: 16px; padding-bottom: 110px; }
+        @keyframes scroll {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); } /* Сдвиг ровно на половину дублированного контента */
+        }
+
+        /* --- КОНТЕНТ --- */
+        .container { 
+            flex-grow: 1; 
+            overflow-y: auto; 
+            padding: 20px; 
+            padding-bottom: 100px;
+            scroll-behavior: smooth;
+        }
         
-        .screen { display: none; }
+        .screen { 
+            display: none; 
+            animation: fadeIn 0.4s ease forwards;
+        }
         .screen.active { display: block; }
 
-        /* --- ВЕРСТКА КЕЙСОВ --- */
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-        .case-card { background: var(--panel); border-radius: 20px; padding: 16px; text-align: center; border: 1px solid var(--border); }
-        .case-title { font-size: 10px; font-weight: 800; text-transform: uppercase; color: var(--text-gray); margin-bottom: 10px; display: block; }
-        .case-img { width: 80px; height: 80px; object-fit: contain; margin-bottom: 12px; }
-        .case-btn { width: 100%; background: rgba(43, 88, 255, 0.1); border: 1px solid rgba(43, 88, 255, 0.1); color: #5c7fff; padding: 10px; border-radius: 12px; font-size: 11px; font-weight: 800; }
-
-        /* --- ВЕРСТКА ИНВЕНТАРЯ --- */
-        .inv-content { text-align: center; }
-        .pepe-gif { width: 140px; margin-bottom: 15px; }
-        .inv-h1 { font-size: 22px; font-weight: 800; margin-bottom: 6px; display: block; }
-        .inv-h2 { font-size: 17px; font-weight: 700; display: block; margin-bottom: 4px; }
-        .inv-h3 { font-size: 13px; color: var(--text-gray); display: block; margin-bottom: 25px; }
-
-        .inv-list { text-align: left; max-width: 300px; margin: 0 auto; }
-        .inv-row { display: flex; align-items: flex-start; gap: 14px; margin-bottom: 20px; }
-        .inv-icon { color: var(--blue); margin-top: 2px; }
-        .inv-txt-top { font-size: 14px; font-weight: 700; display: block; margin-bottom: 2px; }
-        .inv-txt-bot { font-size: 11px; color: var(--text-gray); display: block; }
-
-        /* --- ВЕРСТКА ПРОФИЛЯ --- */
-        .card-p { background: var(--panel); border-radius: 24px; padding: 20px; margin-bottom: 16px; border: 1px solid var(--border); }
-        .user-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        .u-info { display: flex; align-items: center; gap: 12px; }
-        .u-avatar { width: 54px; height: 54px; border-radius: 50%; border: 1px solid var(--border); background: #252841; }
-        .connect-b { background: #252841; border: none; color: white; padding: 8px 14px; border-radius: 12px; font-size: 13px; font-weight: 600; }
-        .dep-b { width: 100%; background: var(--blue); border: none; color: white; padding: 16px; border-radius: 16px; font-size: 16px; font-weight: 700; box-shadow: 0 4px 15px rgba(43, 88, 255, 0.2); }
-
-        /* --- НИЖНЯЯ НАВИГАЦИЯ --- */
-        nav {
-            position: fixed; bottom: 0; width: 100%; display: flex; 
-            background: var(--panel); border-top: 1px solid var(--border); padding: 10px 0 30px 0;
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
-        .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; color: #505875; background: none; border: none; outline: none; }
-        .nav-item.active { color: var(--blue); }
-        .nav-item span { font-size: 10px; margin-top: 6px; font-weight: 700; }
-        .nav-svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 2.2; }
+
+        .section-title {
+            font-size: 12px; font-weight: 800; text-transform: uppercase;
+            color: var(--text-gray); margin: 25px 0 15px 5px;
+            letter-spacing: 1.5px; display: block;
+        }
+
+        /* --- КАРТОЧКИ КЕЙСОВ --- */
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        
+        .case-card {
+            background: var(--card);
+            border-radius: 24px;
+            padding: 15px;
+            text-align: center;
+            border: 1px solid var(--border);
+            position: relative;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        .case-card:active { transform: scale(0.95); background: var(--panel); }
+        
+        .case-img { 
+            width: 90px; height: 90px; 
+            object-fit: cover; 
+            border-radius: 18px; 
+            margin-bottom: 12px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        
+        .case-name { font-size: 14px; font-weight: 700; margin-bottom: 10px; display: block; }
+        
+        .btn-price {
+            width: 100%;
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 14px;
+            font-weight: 800;
+            font-size: 12px;
+            box-shadow: 0 4px 12px var(--accent-glow);
+        }
+
+        /* --- ИНВЕНТАРЬ --- */
+        .inventory-item {
+            background: var(--card);
+            border-radius: 20px;
+            padding: 12px;
+            display: flex; align-items: center; gap: 15px;
+            margin-bottom: 12px;
+            border: 1px solid var(--border);
+        }
+        .inv-img { width: 60px; height: 60px; border-radius: 12px; object-fit: cover; }
+        .inv-info { flex-grow: 1; }
+        .inv-name { font-weight: 700; font-size: 15px; display: block; }
+        .inv-price { color: var(--accent); font-weight: 800; font-size: 13px; }
+        
+        .btn-action {
+            padding: 8px 15px; border-radius: 10px; border: none;
+            font-size: 11px; font-weight: 700; color: white;
+        }
+
+        /* --- НАВИГАЦИЯ --- */
+        nav {
+            position: fixed; bottom: 0; width: 100%;
+            display: flex; justify-content: space-around;
+            background: rgba(11, 13, 28, 0.95);
+            backdrop-filter: blur(20px);
+            padding: 10px 0 30px 0;
+            border-top: 1px solid var(--border);
+        }
+        .nav-item { 
+            display: flex; flex-direction: column; align-items: center; 
+            color: var(--text-gray); background: none; border: none; opacity: 0.6;
+        }
+        .nav-item.active { color: var(--accent); opacity: 1; transform: translateY(-2px); }
+        .nav-item span { font-size: 11px; font-weight: 700; margin-top: 5px; }
+        .nav-svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 2.5; }
+
+        /* ПРОФИЛЬ */
+        .profile-box {
+            background: var(--card);
+            border-radius: 30px;
+            padding: 30px 20px;
+            text-align: center;
+            border: 1px solid var(--border);
+        }
+        .p-avatar { width: 90px; height: 90px; border-radius: 25px; border: 3px solid var(--accent); margin-bottom: 15px; }
     </style>
 </head>
 <body>
 
     <header>
         <div class="header-left">
-            <img id="avatar-img" src="" class="tg-avatar" style="display:none;">
-            <div id="avatar-placeholder" class="tg-avatar" style="background:#252841;"></div>
-            <div class="tg-info">
+            <img id="avatar-img" src="https://via.placeholder.com/100" class="tg-avatar">
+            <div>
                 <span id="u-name" class="tg-name">Загрузка...</span>
-                <div class="online-status"><span class="online-dot"></span> <b id="online-num">1,402</b> В СЕТИ</div>
+                <div class="online-status"><span class="online-dot"></span> <b id="online-num">1,402</b> ONLINE</div>
             </div>
         </div>
-        <div class="balance-group">
-            <span class="bal-val">1000</span>
-            <span class="bal-ton">TON</span>
-            <button class="plus-btn" onclick="switchTab('screen-profile', document.getElementById('nav-prof'))">+</button>
+        <div class="balance-card">
+            <span id="user-balance">0.00</span>
+            <small style="font-weight: 800; font-size: 10px; color: #829fff;">TON</small>
         </div>
     </header>
+
+    <!-- ПЛАВНАЯ ЛЕНТА -->
+    <div class="tape-wrapper">
+        <div class="tape-track" id="nft-tape">
+            <!-- Скрипт заполнит это автоматически твоими ссылками -->
+        </div>
+    </div>
 
     <div class="container">
         
         <!-- КЕЙСЫ -->
         <div id="screen-cases" class="screen active">
+            <span class="section-title">🔥 Популярные кейсы</span>
             <div class="grid">
-                <div class="case-card">
-                    <span class="case-title">Ежедневный кейс</span>
-                    <img src="https://cdn-icons-png.flaticon.com/512/6584/6584942.png" class="case-img">
-                    <button class="case-btn">ОТКРЫТЬ</button>
+                <div class="case-card" onclick="openCase('cheap_1')">
+                    <img src="https://avatars.mds.yandex.net/i?id=d1d22a2684e59fc7a6853e2e5f58a1b9c37b03e4-9167398-images-thumbs&n=13" class="case-img">
+                    <span class="case-name">Новичок</span>
+                    <button class="btn-price">0.20 TON</button>
                 </div>
-                <div class="case-card">
-                    <span class="case-title">Бонусный кейс</span>
-                    <img src="https://cdn-icons-png.flaticon.com/512/6584/6584942.png" class="case-img">
-                    <button class="case-btn">ВВЕСТИ КОД</button>
+                <div class="case-card" onclick="openCase('cheap_3')">
+                    <img src="https://avatars.mds.yandex.net/i?id=bd5722984e37f2b5d60bb6fb770a7db8c7adf1e6-4789343-images-thumbs&n=13" class="case-img">
+                    <span class="case-name">Стандарт</span>
+                    <button class="btn-price">1.00 TON</button>
                 </div>
-                <div class="case-card">
-                    <span class="case-title">Депозит 3.69 TON</span>
-                    <img src="https://cdn-icons-png.flaticon.com/512/6584/6584942.png" class="case-img">
-                    <button class="case-btn">ПОЛУЧИТЬ</button>
+                <div class="case-card" onclick="openCase('mid_2')">
+                    <img src="https://avatars.mds.yandex.net/i?id=950272bf7d6aaa2e9f0f51efdacec8b2fad18d3e-4628606-images-thumbs&n=13" class="case-img">
+                    <span class="case-name">Везунчик</span>
+                    <button class="btn-price">10.0 TON</button>
                 </div>
-                <div class="case-card">
-                    <span class="case-title">Депозит 7.49 TON</span>
-                    <img src="https://cdn-icons-png.flaticon.com/512/6584/6584942.png" class="case-img">
-                    <button class="case-btn">ПОЛУЧИТЬ</button>
+                <div class="case-card" onclick="openCase('high_2')">
+                    <img src="https://avatars.mds.yandex.net/i?id=219e744c2c0aad726af1ae93c4b7c04d80893b08-5235887-images-thumbs&n=13" class="case-img">
+                    <span class="case-name">Шейх</span>
+                    <button class="btn-price">100 TON</button>
+                </div>
+            </div>
+
+            <span class="section-title">🎁 Бесплатное</span>
+            <div class="grid">
+                <div class="case-card" onclick="openCase('daily')">
+                    <img src="https://avatars.mds.yandex.net/i?id=c30ff46259e17421c1c07524a6f58bc853d9ace3-3751671-images-thumbs&n=13" class="case-img">
+                    <span class="case-name">Ежедневный</span>
+                    <button class="btn-price" style="background: var(--green);">ОТКРЫТЬ</button>
                 </div>
             </div>
         </div>
 
         <!-- ИНВЕНТАРЬ -->
         <div id="screen-inventory" class="screen">
-            <div class="inv-content">
-                <img src="https://stickers.fullyst.com/967291c8-a210-5ea4-9cdd-8b656eedba6a/full/AgAD-FkAAtRusUs.webp" class="pepe-gif">
-                <span class="inv-h1">Инвентарь пуст</span>
-                <span class="inv-h2">Есть подарки на аккаунте?</span>
-                <span class="inv-h3">Добавь их через бота и получи TON!</span>
-
-                <div class="inv-list">
-                    <div class="inv-row">
-                        <svg class="inv-icon" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
-                        <div class="inv-txt">
-                            <span class="inv-txt-top">Перейди в бота</span>
-                            <span class="inv-txt-bot">или по нику: @ТУТ БУДЕТ ТВОЙ НИК</span>
-                        </div>
-                    </div>
-                    <div class="inv-row">
-                        <svg class="inv-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="8" width="18" height="12" rx="2"/><path d="M12 8V21M7 8a4 4 0 0 1 0-8c2 0 5 4 5 4s3-4 5-4a4 4 0 1 1 0 8"/></svg>
-                        <div class="inv-txt">
-                            <span class="inv-txt-top">Отправь подарок боту</span>
-                            <span class="inv-txt-bot">количество подарков не ограничено</span>
-                        </div>
-                    </div>
-                    <div class="inv-row">
-                        <svg class="inv-icon" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-                        <div class="inv-txt">
-                            <span class="inv-txt-top">Быстрый обмен</span>
-                            <span class="inv-txt-bot">Получите TON на ваш баланс</span>
-                        </div>
-                    </div>
+            <div id="inventory-list">
+                <div style="text-align: center; color: var(--text-gray); padding-top: 50px;">
+                    Тут пока пусто...
                 </div>
             </div>
         </div>
 
         <!-- ПРОФИЛЬ -->
         <div id="screen-profile" class="screen">
-            <div class="card-p">
-                <div class="user-row">
-                    <div class="u-info">
-                        <img id="p-avatar" src="" class="u-avatar" style="display:none;">
-                        <div id="p-avatar-placeholder" class="u-avatar" style="background:#252841;"></div>
-                        <div>
-                            <span id="p-name" class="tg-name" style="font-size: 17px;">Пользователь</span>
-                            <span id="p-username" style="font-size: 13px; color: var(--text-gray); display: block;">@username</span>
-                        </div>
-                    </div>
-                    <button class="connect-b">Подключить</button>
-                </div>
-                <button class="dep-b">Пополнить</button>
-            </div>
-            
-            <div class="card-p" style="padding: 24px 20px;">
-                <span style="font-size: 18px; font-weight: 800; margin-bottom: 20px; display: block;">Реферальная ссылка</span>
-                <div style="background: #0a0b1e; border: 1px solid #1c1f35; border-radius: 12px; padding: 14px; font-size: 12px; color: #8c92b3; font-family: monospace; overflow: hidden; text-overflow: ellipsis; margin-bottom: 20px;">
-                    t.me/ТУТ БУДЕТ ТВОЙ БОТ?start=774146644
-                </div>
-                <div class="grid">
-                    <div style="background: #0f1228; padding: 15px; border-radius: 16px; text-align: center;">
-                        <span style="font-size: 10px; color: var(--text-gray); display: block; margin-bottom: 4px;">Баланс</span>
-                        <div style="font-size: 16px; font-weight: 800;">0.0 <span style="font-size: 11px; color: var(--text-gray);">TON</span></div>
-                    </div>
-                    <div style="background: #0f1228; padding: 15px; border-radius: 16px; text-align: center;">
-                        <span style="font-size: 10px; color: var(--text-gray); display: block; margin-bottom: 4px;">Заработано</span>
-                        <div style="font-size: 16px; font-weight: 800;">0.0 <span style="font-size: 11px; color: var(--text-gray);">TON</span></div>
-                    </div>
-                </div>
+            <div class="profile-box">
+                <img id="p-avatar" src="https://via.placeholder.com/100" class="p-avatar">
+                <h2 id="p-name" style="margin: 0;">User</h2>
+                <p id="p-username" style="color: var(--text-gray); margin-bottom: 25px;">@username</p>
+                
+                <button class="btn-price" onclick="simulateDeposit()" style="margin-bottom: 10px;">Пополнить баланс</button>
+                <button class="btn-price" style="background: #252841;">Привязать кошелек</button>
             </div>
         </div>
+
     </div>
 
-    <!-- НАВИГАЦИЯ -->
     <nav>
         <button class="nav-item active" onclick="switchTab('screen-cases', this)">
-            <svg class="nav-svg" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+            <svg class="nav-svg" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
             <span>Кейсы</span>
         </button>
         <button class="nav-item" onclick="switchTab('screen-inventory', this)">
-            <svg class="nav-svg" viewBox="0 0 24 24"><path d="M20 12V8H6a2 2 0 0 1-2-2c0-1.1.9-2 2-2h12v4"/><path d="M4 6v12c0 1.1.9 2 2 2h14v-4"/><path d="M18 12a2 2 0 0 0-2 2c0 1.1.9 2 2 2h4v-4h-4z"/></svg>
+            <svg class="nav-svg" viewBox="0 0 24 24"><path d="M20 7h-9l-3-3H2v16h20V7z"></path></svg>
             <span>Инвентарь</span>
         </button>
-        <button id="nav-prof" class="nav-item" onclick="switchTab('screen-profile', this)">
-            <svg class="nav-svg" viewBox="0 0 24 24"><circle cx="12" cy="7" r="4"/><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/></svg>
+        <button class="nav-item" onclick="switchTab('screen-profile', this)">
+            <svg class="nav-svg" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
             <span>Профиль</span>
         </button>
     </nav>
@@ -246,41 +312,129 @@
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
-        tg.ready();
 
-        // Данные пользователя из Telegram
+        let balance = 0.00;
+        let inventory = [];
+        
+        // Твои ссылки на картинки
+        const nftImages = [
+            "https://avatars.mds.yandex.net/i?id=d1d22a2684e59fc7a6853e2e5f58a1b9c37b03e4-9167398-images-thumbs&n=13",
+            "https://avatars.mds.yandex.net/i?id=bd5722984e37f2b5d60bb6fb770a7db8c7adf1e6-4789343-images-thumbs&n=13",
+            "https://avatars.mds.yandex.net/i?id=950272bf7d6aaa2e9f0f51efdacec8b2fad18d3e-4628606-images-thumbs&n=13",
+            "https://avatars.mds.yandex.net/i?id=c30ff46259e17421c1c07524a6f58bc853d9ace3-3751671-images-thumbs&n=13",
+            "https://avatars.mds.yandex.net/i?id=219e744c2c0aad726af1ae93c4b7c04d80893b08-5235887-images-thumbs&n=13",
+            "https://avatars.mds.yandex.net/i?id=5033001e66721cd2619b786171806f9a90e38a08-5666317-images-thumbs&n=13"
+        ];
+
+        // Инициализация ленты (дублируем 2 раза для бесшовности)
+        function initTape() {
+            const track = document.getElementById('nft-tape');
+            const doubleImages = [...nftImages, ...nftImages, ...nftImages]; // Больше копий для длинных экранов
+            doubleImages.forEach(src => {
+                const div = document.createElement('div');
+                div.className = 'tape-item';
+                div.innerHTML = `<img src="${src}">`;
+                track.appendChild(div);
+            });
+        }
+        initTape();
+
+        // Данные юзера
         const user = tg.initDataUnsafe?.user;
         if (user) {
             document.getElementById('u-name').innerText = user.first_name;
             document.getElementById('p-name').innerText = user.first_name;
-            document.getElementById('p-username').innerText = user.username ? '@' + user.username : 'id' + user.id;
-            
+            document.getElementById('p-username').innerText = user.username ? '@' + user.username : 'ID: ' + user.id;
             if (user.photo_url) {
-                const heads = [document.getElementById('avatar-img'), document.getElementById('p-avatar')];
-                const placeholders = [document.getElementById('avatar-placeholder'), document.getElementById('p-avatar-placeholder')];
-                heads.forEach(img => { img.src = user.photo_url; img.style.display = 'block'; });
-                placeholders.forEach(p => p.style.display = 'none');
+                document.getElementById('avatar-img').src = user.photo_url;
+                document.getElementById('p-avatar').src = user.photo_url;
             }
         }
 
-        // Переключение вкладок
-        function switchTab(id, btn) {
+        function switchTab(screenId, btn) {
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
             document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-            
-            const target = document.getElementById(id);
-            target.classList.add('active');
+            document.getElementById(screenId).classList.add('active');
             btn.classList.add('active');
-
-            if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
+            if(tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
         }
 
-        // Имитация настоящего онлайна
+        function openCase(type) {
+            const prices = { cheap_1: 0.2, cheap_3: 1, mid_2: 10, high_2: 100, daily: 0 };
+            const cost = prices[type];
+
+            if (balance < cost) {
+                tg.showAlert("Недостаточно TON для открытия!");
+                return;
+            }
+
+            balance -= cost;
+            
+            // Логика выигрыша (случайное фото из списка)
+            const randomImg = nftImages[Math.floor(Math.random() * nftImages.length)];
+            const winPrice = (cost * (Math.random() * 1.5)).toFixed(2);
+            
+            const item = {
+                name: "NFT Collectible",
+                price: winPrice,
+                img: randomImg
+            };
+
+            inventory.push(item);
+            updateUI();
+            
+            tg.showConfirm(`Поздравляем! Вы выбили NFT стоимостью ${winPrice} TON! Перейти в инвентарь?`, (ok) => {
+                if(ok) switchTab('screen-inventory', document.querySelectorAll('.nav-item')[1]);
+            });
+        }
+
+        function updateUI() {
+            document.getElementById('user-balance').innerText = balance.toFixed(2);
+            const list = document.getElementById('inventory-list');
+            
+            if (inventory.length === 0) {
+                list.innerHTML = `<div style="text-align: center; color: var(--text-gray); padding-top: 50px;">Тут пока пусто...</div>`;
+                return;
+            }
+
+            list.innerHTML = '';
+            inventory.forEach((item, index) => {
+                const div = document.createElement('div');
+                div.className = 'inventory-item';
+                div.innerHTML = `
+                    <img src="${item.img}" class="inv-img">
+                    <div class="inv-info">
+                        <span class="inv-name">${item.name}</span>
+                        <span class="inv-price">${item.price} TON</span>
+                    </div>
+                    <button class="btn-action" style="background: var(--green);" onclick="sellItem(${index})">Продать</button>
+                `;
+                list.appendChild(div);
+            });
+        }
+
+        function sellItem(index) {
+            balance += parseFloat(inventory[index].price);
+            inventory.splice(index, 1);
+            updateUI();
+            if(tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+        }
+
+        function simulateDeposit() {
+            const amount = parseFloat(prompt("Введите сумму TON для теста:"));
+            if(amount) {
+                balance += amount;
+                updateUI();
+            }
+        }
+
+        // Эффект онлайна
         setInterval(() => {
             const el = document.getElementById('online-num');
             let val = parseInt(el.innerText.replace(',', ''));
-            el.innerText = (val + (Math.floor(Math.random() * 5) - 2)).toLocaleString('en-US');
-        }, 3000);
+            el.innerText = (val + Math.floor(Math.random() * 3 - 1)).toLocaleString();
+        }, 5000);
+
     </script>
 </body>
 </html>
